@@ -1,7 +1,7 @@
 # DR Resiliency Web Application
 
 This project is a simple web application to manage disaster recovery (DR) resiliency testing scenarios.
-It supports both within-region and cross-region test flows and includes options for manual testing and chaos tool guidance for AWS FIS and Gremlin.
+It supports both within-region and cross-region test flows and includes options for manual testing and chaos tool guidance for AWS FIS, Azure Chaos Studio, GCP resilience testing, and Gremlin.
 
 ## Files
 - `app.js` - Express server that serves the frontend and provides test simulation APIs.
@@ -37,7 +37,9 @@ http://localhost:3000
 - Select primary and secondary region/AZ failover targets for DR execution
 - Select within-region or cross-region DR testing
 - Select manual test mode or chaos tool mode
-- Get guidance for AWS FIS and Gremlin chaos tests
+- Select multiple services at the same time for a combined resiliency test
+- Get guidance for AWS FIS, Azure Chaos Studio, GCP resilience testing, and Gremlin chaos tests
+- Include DNS failover recovery scenarios with AWS Route 53, Azure DNS, and GCP Cloud DNS
 - See a simulated result with step-by-step actions
 
 ## Notes

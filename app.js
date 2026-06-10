@@ -10,19 +10,19 @@ const providers = [
   {
     id: 'aws',
     name: 'AWS',
-    services: ['EC2', 'RDS', 'S3', 'ELB'],
+    services: ['EC2', 'RDS', 'S3', 'ELB', 'Route 53'],
     regions: ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2']
   },
   {
     id: 'azure',
     name: 'Azure',
-    services: ['Virtual Machine', 'SQL Database', 'Storage Account', 'Load Balancer'],
+    services: ['Virtual Machine', 'SQL Database', 'Storage Account', 'Load Balancer', 'Azure DNS'],
     regions: ['eastus', 'westus', 'centralus']
   },
   {
     id: 'gcp',
     name: 'GCP',
-    services: ['Compute Engine', 'Cloud SQL', 'Cloud Storage', 'Cloud Load Balancing'],
+    services: ['Compute Engine', 'Cloud SQL', 'Cloud Storage', 'Cloud Load Balancing', 'Cloud DNS'],
     regions: ['us-east1', 'us-west1', 'us-central1']
   }
 ];
@@ -55,7 +55,7 @@ app.post('/api/test', async (req, res) => {
     description
   } = req.body;
 
-  if (!provider || !service || !testScope || !mode || !primaryRegion || !primaryAz) {
+  if (!provider || !service || (Array.isArray(service) && service.length === 0) || !testScope || !mode || !primaryRegion || !primaryAz) {
     return res.status(400).json({ error: 'provider, service, testScope, mode, primaryRegion, and primaryAz are required.' });
   }
 
@@ -123,15 +123,16 @@ app.post('/api/test', async (req, res) => {
     });
   }
 
+  const serviceLabel = Array.isArray(service) ? service.join(', ') : service;
   if (mode === 'manual') {
     result.steps.push({
       title: 'Execute manual DR test',
-      detail: `Perform the chosen failover steps manually for ${provider.toUpperCase()} ${service}.` }
+      detail: `Perform the chosen failover steps manually for ${provider.toUpperCase()} ${serviceLabel}.` }
     );
   } else {
     result.steps.push({
       title: `Execute chaos tool test: ${chaosTool}`,
-      detail: `Trigger the configured chaos experiment using ${chaosTool}.` }
+      detail: `Trigger the configured chaos experiment using ${chaosTool} against ${provider.toUpperCase()} ${serviceLabel}.` }
     );
   }
 
@@ -251,12 +252,13 @@ app.post('/api/chaos/guide', (req, res) => {
     }
   };
 
-  const selected = guidance[tool.toLowerCase()];
+  const chaosToolKey = Object.keys(guidance).find((key) => key.toLowerCase() === tool.toLowerCase());
+  const selected = chaosToolKey ? guidance[chaosToolKey] : null;
   if (!selected) {
     return res.status(400).json({ error: `Unsupported chaos tool: ${tool}` });
   }
 
-  res.json({ ...selected, provider, service });
+  res.json({ ...selected, provider, service: Array.isArray(service) ? service.join(', ') : service });
 });
 
 app.get('*', (req, res) => {
