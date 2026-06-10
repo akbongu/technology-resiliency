@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DR Resiliency Testing</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header>
+      <h1>DR Resiliency Testing Portal</h1>
+      <p>Plan and execute within-region and cross-region DR tests for multiple service providers.</p>
+    </header>
+
+    <main>
+      <section class="panel panel-providers">
+        <div class="provider-header">
+          <div>
+            <h2>Cloud Service Providers</h2>
+            <p>Select a provider card to update the configuration quickly.</p>
+          </div>
+        </div>
+        <div id="providerCards" class="provider-cards"></div>
+      </section>
+
+      <div class="top-row">
+        <section class="panel panel-config">
+          <h2>Test Configuration</h2>
+          <form id="drForm">
+            <label>
+              Cloud Provider
+              <select id="provider" required></select>
+            </label>
+            <label>
+              Service
+              <select id="service" required></select>
+            </label>
+            <label id="providerProfileLabel" class="hidden">
+              <span id="providerProfileLabelText">Provider CLI Profile</span>
+              <input type="text" id="providerProfile" placeholder="dr-test" />
+            </label>
+            <label>
+              Account ID
+              <input type="text" id="accountId" placeholder="639183867348" />
+            </label>
+            <div class="row">
+              <label>
+                Test Scope
+                <select id="testScope" required>
+                  <option value="within-region">Within Region</option>
+                  <option value="cross-region">Cross Region</option>
+                </select>
+              </label>
+              <label>
+                Mode
+                <select id="mode" required>
+                  <option value="manual">Manual</option>
+                  <option value="chaos">Chaos Tool</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Primary Region
+              <select id="primaryRegion" required></select>
+            </label>
+            <label id="secondaryRegionLabel" class="hidden">
+              Secondary Region
+              <select id="secondaryRegion"></select>
+            </label>
+            <label id="primaryAzLabel">
+              Primary AZ
+              <select id="primaryAz"></select>
+            </label>
+            <label id="secondaryAzLabel" class="hidden">
+              Secondary AZ
+              <select id="secondaryAz"></select>
+            </label>
+            <label id="chaosToolLabel" class="hidden">
+              Chaos Tool
+              <select id="chaosTool">
+                <option value="fis">AWS FIS</option>
+                <option value="gremlin">Gremlin</option>
+              </select>
+            </label>
+            <label>
+              Instance/Resource ID
+              <input type="text" id="instanceId" placeholder="i-0abc123..." />
+            </label>
+            <label>
+              Description
+              <textarea id="description" rows="3" placeholder="Optional test notes..."></textarea>
+            </label>
+            <div class="actions">
+              <button type="submit">Start DR Test</button>
+              <button type="button" id="validateProfileButton">Validate Credentials</button>
+              <button type="button" id="chaosGuideButton">Get Chaos Guidance</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel panel-results">
+          <h2>Results</h2>
+          <div id="resultPane" class="result-pane">
+            <p>No test started yet. Configure your scenario and begin.</p>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

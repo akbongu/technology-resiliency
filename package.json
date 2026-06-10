@@ -1,0 +1,13 @@
+{
+  "name": "dr-resiliency-app",
+  "version": "1.0.0",
+  "description": "Web application for DR testing within region and across regions with manual and chaos tool options.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  }
+}
