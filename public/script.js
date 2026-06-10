@@ -95,6 +95,10 @@ function getAzList(region) {
   return ['zone-1', 'zone-2', 'zone-3'];
 }
 
+function getSelectedServices() {
+  return Array.from(serviceSelect.selectedOptions).map((option) => option.value);
+}
+
 function setSelectOptions(select, values, includePlaceholder = false, selectedValue = null) {
   const options = values.map((value) => `<option value="${value}"${value === selectedValue ? ' selected' : ''}>${value}</option>`);
   select.innerHTML = `${includePlaceholder ? '<option value="">-- select --</option>' : ''}${options.join('')}`;
@@ -106,6 +110,9 @@ function updateServiceOptions() {
   serviceSelect.innerHTML = selected.services
     .map((service) => `<option value="${service}">${service}</option>`)
     .join('');
+  if (serviceSelect.options.length > 0) {
+    serviceSelect.selectedIndex = 0;
+  }
 }
 
 function updateRegionOptions() {
@@ -202,6 +209,7 @@ function renderResult(data) {
     return;
   }
 
+  const serviceLabel = Array.isArray(data.service) ? data.service.join(', ') : data.service;
   const bullets = data.steps
     .map((step) => `<li><strong>${step.title}</strong>: ${step.detail}</li>`)
     .join('');
@@ -212,7 +220,7 @@ function renderResult(data) {
       <p><strong>Status:</strong> ${data.status}</p>
       <p><strong>Outcome:</strong> ${data.outcome}</p>
       <p><strong>Provider:</strong> ${data.provider}</p>
-      <p><strong>Service:</strong> ${data.service}</p>
+      <p><strong>Service(s):</strong> ${serviceLabel}</p>
       <p><strong>Account ID:</strong> ${data.accountId}</p>
       <p><strong>Primary Region:</strong> ${data.primaryRegion}</p>
       <p><strong>Primary AZ:</strong> ${data.primaryAz}</p>
@@ -236,11 +244,12 @@ function renderGuidance(data) {
     .map((step) => `<li>${step}</li>`)
     .join('');
 
+  const serviceLabel = Array.isArray(data.service) ? data.service.join(', ') : data.service;
   resultPane.innerHTML = `
     <div class="result-summary">
       <p><strong>${data.title}</strong></p>
       <p><strong>Provider:</strong> ${data.provider}</p>
-      <p><strong>Service:</strong> ${data.service}</p>
+      <p><strong>Service:</strong> ${serviceLabel}</p>
     </div>
     <ul class="step-list">${bullets}</ul>
   `;
@@ -251,7 +260,7 @@ drForm.addEventListener('submit', async (event) => {
 
   const payload = {
     provider: providerSelect.value,
-    service: serviceSelect.value,
+    service: getSelectedServices(),
     testScope: testScopeSelect.value,
     mode: modeSelect.value,
     chaosTool: chaosToolSelect.value,
@@ -309,7 +318,7 @@ validateProfileButton.addEventListener('click', async () => {
 chaosGuideButton.addEventListener('click', async () => {
   const payload = {
     provider: providerSelect.value,
-    service: serviceSelect.value,
+    service: getSelectedServices(),
     tool: document.getElementById('chaosTool').value
   };
 
