@@ -92,6 +92,7 @@ function getAzList(region) {
   if (region.startsWith('us-east1')) return ['us-east1-b', 'us-east1-c', 'us-east1-d'];
   if (region.startsWith('us-west1')) return ['us-west1-a', 'us-west1-b', 'us-west1-c'];
   if (region.startsWith('us-central1')) return ['us-central1-a', 'us-central1-b', 'us-central1-c'];
+  if (region.startsWith('us-ashburn') || region.startsWith('us-phoenix') || region.startsWith('eu-frankfurt')) return ['ad-1', 'ad-2', 'ad-3'];
   return ['zone-1', 'zone-2', 'zone-3'];
 }
 
@@ -142,6 +143,9 @@ function updateProviderProfileLabel() {
   } else if (provider === 'gcp') {
     labelText = 'GCP Config / Profile';
     placeholder = 'configuration-name';
+  } else if (provider === 'oci') {
+    labelText = 'OCI CLI Profile';
+    placeholder = 'DEFAULT';
   }
 
   providerProfileLabelText.textContent = labelText;
@@ -166,8 +170,10 @@ function updateChaosToolOptions() {
     options = [
       { value: 'gcpChaos', label: 'GCP Resilience Testing' },
       { value: 'gremlin', label: 'Gremlin' }
-    ];
-  }
+    ];  } else if (provider === 'oci') {
+    options = [
+      { value: 'gremlin', label: 'Gremlin' }
+    ];  }
 
   chaosToolSelect.innerHTML = options
     .map((tool) => `<option value="${tool.value}">${tool.label}</option>`)

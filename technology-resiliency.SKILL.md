@@ -12,11 +12,14 @@ This skill defines a Technology Resiliency Agent focused on disaster recovery re
 - Support a web application workflow for manual DR tests and chaos-tool scenarios such as AWS FIS, Azure Chaos Studio, GCP resilience testing, and Gremlin.
 - Provide selectable primary and secondary region/AZ failover options for supported service providers.
 - Use provider CLI profile or account validation as part of the DR execution flow.
+- Support combined multi-service resiliency tests in a single scenario.
+- Include DNS failover and routing service scenarios such as AWS Route 53, Azure DNS, GCP Cloud DNS, and OCI DNS.
 
 ## Usage
 Use this skill when the objective is to build or review a disaster recovery testing program, specifically:
 - Application and infrastructure failover within the same region.
 - Application and infrastructure failover across regions.
+- Multi-service failover scenarios that exercise several services in parallel.
 - Validation of RTO/RPO, DNS rerouting, data replication, and service restoration.
 - Execution planning through a DR resiliency web application with manual and chaos-driven test modes.
 - Provider CLI account/profile validation to confirm the target account or subscription before test execution.

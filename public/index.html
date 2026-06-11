@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DR Resiliency Testing</title>
+  <title>Technology Resiliency Testing</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="app-shell">
     <header>
-      <h1>DR Resiliency Testing Portal</h1>
+      <h1>Technology Resiliency Testing</h1>
       <p>Plan and execute within-region and cross-region DR tests for multiple service providers.</p>
     </header>
 
@@ -25,24 +25,31 @@
       </section>
 
       <div class="top-row">
+        <section class="panel panel-auth">
+          <h2>Authentication</h2>
+          <label>
+            Cloud Provider
+            <select id="provider" required></select>
+          </label>
+          <label id="providerProfileLabel" class="hidden">
+            <span id="providerProfileLabelText">Provider CLI Profile</span>
+            <input type="text" id="providerProfile" placeholder="dr-test" />
+          </label>
+          <label>
+            Account ID
+            <input type="text" id="accountId" placeholder="639183867348" />
+          </label>
+          <div class="actions auth-actions">
+            <button type="button" id="validateProfileButton">Validate Credentials</button>
+          </div>
+        </section>
+
         <section class="panel panel-config">
           <h2>Test Configuration</h2>
           <form id="drForm">
             <label>
-              Cloud Provider
-              <select id="provider" required></select>
-            </label>
-            <label>
               Services (multi-select)
               <select id="service" multiple size="5" required></select>
-            </label>
-            <label id="providerProfileLabel" class="hidden">
-              <span id="providerProfileLabelText">Provider CLI Profile</span>
-              <input type="text" id="providerProfile" placeholder="dr-test" />
-            </label>
-            <label>
-              Account ID
-              <input type="text" id="accountId" placeholder="639183867348" />
             </label>
             <div class="row">
               <label>
@@ -93,19 +100,25 @@
             </label>
             <div class="actions">
               <button type="submit">Start DR Test</button>
-              <button type="button" id="validateProfileButton">Validate Credentials</button>
-              <button type="button" id="chaosGuideButton">Get Chaos Guidance</button>
             </div>
           </form>
         </section>
-
-        <section class="panel panel-results">
-          <h2>Results</h2>
-          <div id="resultPane" class="result-pane">
-            <p>No test started yet. Configure your scenario and begin.</p>
-          </div>
-        </section>
       </div>
+
+      <section class="panel panel-guidance">
+        <h2>Guidance</h2>
+        <p>Request provider-specific chaos guidance separately from the test execution flow.</p>
+        <div class="actions guidance-actions">
+          <button type="button" id="chaosGuideButton">Get Chaos Guidance</button>
+        </div>
+      </section>
+
+      <section class="panel panel-results">
+        <h2>Results</h2>
+        <div id="resultPane" class="result-pane">
+          <p>No test started yet. Configure your scenario and begin.</p>
+        </div>
+      </section>
     </main>
   </div>
 
