@@ -24,6 +24,12 @@ const providers = [
     name: 'GCP',
     services: ['Compute Engine', 'Cloud SQL', 'Cloud Storage', 'Cloud Load Balancing', 'Cloud DNS'],
     regions: ['us-east1', 'us-west1', 'us-central1']
+  },
+  {
+    id: 'oci',
+    name: 'Oracle Cloud',
+    services: ['Compute', 'Autonomous DB', 'Object Storage', 'Load Balancer', 'OCI DNS'],
+    regions: ['us-ashburn-1', 'us-phoenix-1', 'eu-frankfurt-1']
   }
 ];
 
@@ -197,6 +203,16 @@ app.post('/api/provider/validate', async (req, res) => {
       return res.json({ provider, profile, accountId: stdout.trim() });
     }
 
+    if (provider === 'oci') {
+      const args = ['os', 'ns', 'get', '--output', 'json'];
+      if (profile) {
+        args.push('--profile', profile);
+      }
+      const { stdout } = await execFileAsync('oci', args);
+      const namespace = JSON.parse(stdout.trim()).data || JSON.parse(stdout.trim()).value || null;
+      return res.json({ provider, profile, accountId: namespace || 'OCI namespace' });
+    }
+
     res.status(400).json({ error: `Unsupported provider: ${provider}` });
   } catch (error) {
     res.status(400).json({ error: `${provider.toUpperCase()} validation failed: ${error.message}` });
@@ -213,6 +229,7 @@ app.post('/api/chaos/guide', (req, res) => {
     fis: {
       title: 'AWS FIS Test Guidance',
       steps: [
+        'Use AWS Fault Injection Simulator (FIS) guided by the official reference: https://aws.amazon.com/fis/.',
         'Tag the target EC2 instance or service resources for the experiment.',
         'Create or reuse an AWS FIS role with permissions for EC2 and load balancer actions.',
         'Build an experiment template that stops or reboots the chosen target.',
@@ -266,5 +283,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`DR Resiliency app running at http://localhost:${port}`);
+  console.log(`Technology Resiliency Testing app running at http://localhost:${port}`);
 });

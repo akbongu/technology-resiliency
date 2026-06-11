@@ -1,4 +1,4 @@
-# DR Resiliency Web Application
+# Technology Resiliency Testing
 
 This project is a simple web application to manage disaster recovery (DR) resiliency testing scenarios.
 It supports both within-region and cross-region test flows and includes options for manual testing and chaos tool guidance for AWS FIS, Azure Chaos Studio, GCP resilience testing, and Gremlin.
@@ -30,16 +30,16 @@ http://localhost:3000
 ```
 
 ## Features
-- Choose cloud providers: AWS, Azure, GCP
-- Choose service types: EC2, RDS, S3, ELB, Virtual Machine, SQL Database, Cloud Storage, etc.
+- Choose cloud providers: AWS, Azure, GCP, Oracle Cloud
+- Choose service types: EC2, RDS, S3, ELB, Virtual Machine, SQL Database, Cloud Storage, OCI DNS, etc.
 - Enter the account ID and optionally a provider CLI profile for validation
-- Support AWS, Azure, and GCP provider validation flows
+- Support AWS, Azure, GCP, and OCI provider validation flows
 - Select primary and secondary region/AZ failover targets for DR execution
 - Select within-region or cross-region DR testing
 - Select manual test mode or chaos tool mode
 - Select multiple services at the same time for a combined resiliency test
-- Get guidance for AWS FIS, Azure Chaos Studio, GCP resilience testing, and Gremlin chaos tests
-- Include DNS failover recovery scenarios with AWS Route 53, Azure DNS, and GCP Cloud DNS
+- Get guidance for AWS FIS (see https://aws.amazon.com/fis/), Azure Chaos Studio, GCP resilience testing, and Gremlin chaos tests
+- Include DNS failover recovery scenarios with AWS Route 53, Azure DNS, GCP Cloud DNS, and OCI DNS
 - See a simulated result with step-by-step actions
 
 ## Notes
