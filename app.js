@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
+const { validateProviderProfile } = require('./providerAuth');
 const execFileAsync = promisify(execFile);
 const app = express();
 const port = process.env.PORT || 3000;
@@ -76,17 +77,8 @@ app.post('/api/test', async (req, res) => {
 
   if (provider === 'aws' && providerProfile && !effectiveAccountId) {
     try {
-      const { stdout } = await execFileAsync('aws', [
-        'sts',
-        'get-caller-identity',
-        '--profile',
-        providerProfile,
-        '--query',
-        'Account',
-        '--output',
-        'text'
-      ]);
-      effectiveAccountId = stdout.trim();
+      const validation = await validateProviderProfile(provider, providerProfile, primaryRegion);
+      effectiveAccountId = validation.accountId;
     } catch (error) {
       return res.status(400).json({ error: `AWS CLI profile validation failed: ${error.message}` });
     }
@@ -166,58 +158,32 @@ app.post('/api/provider/validate', async (req, res) => {
   }
 
   try {
-    if (provider === 'aws') {
-      const args = [
-        'sts',
-        'get-caller-identity',
-        '--profile',
-        profile,
-        '--query',
-        'Account',
-        '--output',
-        'text'
-      ];
-      if (region) {
-        args.splice(2, 0, '--region', region);
-      }
-      const { stdout } = await execFileAsync('aws', args);
-      return res.json({ provider, profile, accountId: stdout.trim() });
-    }
-
-    if (provider === 'azure') {
-      const args = ['account', 'show'];
-      if (profile) {
-        args.push('--subscription', profile);
-      }
-      args.push('--query', 'id', '-o', 'tsv');
-      const { stdout } = await execFileAsync('az', args);
-      return res.json({ provider, profile, accountId: stdout.trim() });
-    }
-
-    if (provider === 'gcp') {
-      const args = ['config', 'get-value', 'account'];
-      if (profile) {
-        args.push('--configuration', profile);
-      }
-      const { stdout } = await execFileAsync('gcloud', args);
-      return res.json({ provider, profile, accountId: stdout.trim() });
-    }
-
-    if (provider === 'oci') {
-      const args = ['os', 'ns', 'get', '--output', 'json'];
-      if (profile) {
-        args.push('--profile', profile);
-      }
-      const { stdout } = await execFileAsync('oci', args);
-      const namespace = JSON.parse(stdout.trim()).data || JSON.parse(stdout.trim()).value || null;
-      return res.json({ provider, profile, accountId: namespace || 'OCI namespace' });
-    }
-
-    res.status(400).json({ error: `Unsupported provider: ${provider}` });
+    const result = await validateProviderProfile(provider, profile, region);
+    return res.json(result);
   } catch (error) {
     res.status(400).json({ error: `${provider.toUpperCase()} validation failed: ${error.message}` });
   }
 });
+
+function getChaosServiceDescription(service) {
+  const serviceLabel = Array.isArray(service) ? service.join(', ') : service;
+  if (/ec2|compute engine|compute|virtual machine/i.test(serviceLabel)) {
+    return 'compute instance or virtual machine';
+  }
+  if (/rds|cloud sql|autonomous db|database/i.test(serviceLabel)) {
+    return 'database instance or cluster';
+  }
+  if (/s3|cloud storage|object storage/i.test(serviceLabel)) {
+    return 'storage bucket or object storage resource';
+  }
+  if (/elb|load balancer|cloud load balancing|load balancer/i.test(serviceLabel)) {
+    return 'load balancer and its target groups';
+  }
+  if (/route 53|azure dns|cloud dns|oci dns/i.test(serviceLabel)) {
+    return 'DNS routing and health check configuration';
+  }
+  return 'selected service resources';
+}
 
 app.post('/api/chaos/guide', (req, res) => {
   const { tool, provider, service } = req.body;
@@ -225,32 +191,35 @@ app.post('/api/chaos/guide', (req, res) => {
     return res.status(400).json({ error: 'tool, provider, and service are required.' });
   }
 
+  const serviceLabel = Array.isArray(service) ? service.join(', ') : service;
+  const targetDescription = getChaosServiceDescription(serviceLabel);
+
   const guidance = {
     fis: {
       title: 'AWS FIS Test Guidance',
       steps: [
         'Use AWS Fault Injection Simulator (FIS) guided by the official reference: https://aws.amazon.com/fis/.',
-        'Tag the target EC2 instance or service resources for the experiment.',
-        'Create or reuse an AWS FIS role with permissions for EC2 and load balancer actions.',
-        'Build an experiment template that stops or reboots the chosen target.',
-        'Run the experiment and monitor application health.',
+        `Tag the target ${targetDescription} for the experiment.`,
+        'Create or reuse an AWS FIS role with permissions for the selected resources and actions.',
+        'Build an experiment template that simulates failure for the chosen target.',
+        'Run the experiment and monitor application health and recovery.',
         'Review logs and recover the resource after the experiment completes.'
       ]
     },
     azureChaos: {
       title: 'Azure Chaos Studio Guidance',
       steps: [
-        'Choose the target virtual machine or service and define the failure scenario.',
+        `Select the target ${targetDescription} and define the failure scenario.`,
         'Create or update an Azure Chaos Studio experiment with the selected resource.',
         'Assign the required permissions and service principal access.',
-        'Run the experiment and monitor the application and service recovery.',
+        'Run the experiment and monitor application and service recovery.',
         'Stop the experiment and review the impact for remediation planning.'
       ]
     },
     gcpChaos: {
       title: 'GCP Resilience Testing Guidance',
       steps: [
-        'Select the target Compute Engine or Cloud SQL instance for the test.',
+        `Select the target ${targetDescription} for the test.`,
         'Use GCP stress, VM restart, or load balancer failover scenarios as applicable.',
         'Monitor application health, networking, and data consistency during the event.',
         'Recover the service by restoring the target or rerouting traffic.',
@@ -260,7 +229,7 @@ app.post('/api/chaos/guide', (req, res) => {
     gremlin: {
       title: 'Gremlin Chaos Test Guidance',
       steps: [
-        'Choose the target host or service and define the failure mode (CPU, network, shutdown).',
+        `Choose the target ${targetDescription} and define the failure mode (CPU, network, shutdown).`,
         'Create a Gremlin attack for the selected service provider environment.',
         'Run the attack in a controlled window and monitor service resilience.',
         'Stop the attack, verify recovery and identify any gaps.',
@@ -275,7 +244,7 @@ app.post('/api/chaos/guide', (req, res) => {
     return res.status(400).json({ error: `Unsupported chaos tool: ${tool}` });
   }
 
-  res.json({ ...selected, provider, service: Array.isArray(service) ? service.join(', ') : service });
+  res.json({ ...selected, provider, service: serviceLabel });
 });
 
 app.get('*', (req, res) => {
