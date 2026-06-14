@@ -1,9 +1,6 @@
 const express = require('express');
 const path = require('path');
-const { execFile } = require('child_process');
-const { promisify } = require('util');
-const { validateProviderProfile } = require('./providerAuth');
-const execFileAsync = promisify(execFile);
+const { validateProviderProfile, hasEnvCredentials } = require('./providerAuth');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -71,16 +68,16 @@ app.post('/api/test', async (req, res) => {
   }
 
   let effectiveAccountId = accountId || null;
-  if (provider === 'aws' && !effectiveAccountId && !providerProfile) {
-    return res.status(400).json({ error: 'AWS provider requires either accountId or providerProfile to be provided.' });
+  if (!effectiveAccountId && !providerProfile && !hasEnvCredentials(provider)) {
+    return res.status(400).json({ error: `${provider.toUpperCase()} provider requires either accountId, providerProfile, or environment credentials.` });
   }
 
-  if (provider === 'aws' && providerProfile && !effectiveAccountId) {
+  if (!effectiveAccountId && (providerProfile || hasEnvCredentials(provider))) {
     try {
       const validation = await validateProviderProfile(provider, providerProfile, primaryRegion);
       effectiveAccountId = validation.accountId;
     } catch (error) {
-      return res.status(400).json({ error: `AWS CLI profile validation failed: ${error.message}` });
+      return res.status(400).json({ error: `${provider.toUpperCase()} credential validation failed: ${error.message}` });
     }
   }
 
@@ -153,8 +150,8 @@ app.post('/api/provider/validate', async (req, res) => {
   if (!provider) {
     return res.status(400).json({ error: 'provider is required.' });
   }
-  if (!profile) {
-    return res.status(400).json({ error: 'profile or configuration identifier is required.' });
+  if (!profile && !hasEnvCredentials(provider)) {
+    return res.status(400).json({ error: 'profile or environment credentials are required.' });
   }
 
   try {
