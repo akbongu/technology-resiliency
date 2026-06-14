@@ -11,6 +11,7 @@ const secondaryAzLabel = document.getElementById('secondaryAzLabel');
 const chaosToolLabel = document.getElementById('chaosToolLabel');
 const drForm = document.getElementById('drForm');
 const resultPane = document.getElementById('resultPane');
+const guidancePane = document.getElementById('guidancePane');
 const chaosGuideButton = document.getElementById('chaosGuideButton');
 const validateProfileButton = document.getElementById('validateProfileButton');
 const primaryRegionSelect = document.getElementById('primaryRegion');
@@ -242,7 +243,7 @@ function renderResult(data) {
 
 function renderGuidance(data) {
   if (data.error) {
-    resultPane.innerHTML = `<div class="error">${data.error}</div>`;
+    guidancePane.innerHTML = `<div class="error">${data.error}</div>`;
     return;
   }
 
@@ -251,7 +252,7 @@ function renderGuidance(data) {
     .join('');
 
   const serviceLabel = Array.isArray(data.service) ? data.service.join(', ') : data.service;
-  resultPane.innerHTML = `
+  guidancePane.innerHTML = `
     <div class="result-summary">
       <p><strong>${data.title}</strong></p>
       <p><strong>Provider:</strong> ${data.provider}</p>

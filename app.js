@@ -219,38 +219,61 @@ app.post('/api/provider/validate', async (req, res) => {
   }
 });
 
+function getChaosServiceDescription(service) {
+  const serviceLabel = Array.isArray(service) ? service.join(', ') : service;
+  if (/ec2|compute engine|compute|virtual machine/i.test(serviceLabel)) {
+    return 'compute instance or virtual machine';
+  }
+  if (/rds|cloud sql|autonomous db|database/i.test(serviceLabel)) {
+    return 'database instance or cluster';
+  }
+  if (/s3|cloud storage|object storage/i.test(serviceLabel)) {
+    return 'storage bucket or object storage resource';
+  }
+  if (/elb|load balancer|cloud load balancing|load balancer/i.test(serviceLabel)) {
+    return 'load balancer and its target groups';
+  }
+  if (/route 53|azure dns|cloud dns|oci dns/i.test(serviceLabel)) {
+    return 'DNS routing and health check configuration';
+  }
+  return 'selected service resources';
+}
+
 app.post('/api/chaos/guide', (req, res) => {
   const { tool, provider, service } = req.body;
   if (!tool || !provider || !service) {
     return res.status(400).json({ error: 'tool, provider, and service are required.' });
   }
 
+  const serviceLabel = Array.isArray(service) ? service.join(', ') : service;
+  const targetDescription = getChaosServiceDescription(serviceLabel);
+
   const guidance = {
     fis: {
       title: 'AWS FIS Test Guidance',
       steps: [
         'Use AWS Fault Injection Simulator (FIS) guided by the official reference: https://aws.amazon.com/fis/.',
-        'Tag the target EC2 instance or service resources for the experiment.',
-        'Create or reuse an AWS FIS role with permissions for EC2 and load balancer actions.',
-        'Build an experiment template that stops or reboots the chosen target.',
-        'Run the experiment and monitor application health.',
+        `Tag the target ${targetDescription} for the experiment.`,
+        'Create or reuse an AWS FIS role with permissions for the selected resources and actions.',
+        'Build an experiment template that simulates failure for the chosen target.',
+        'Run the experiment and monitor application health and recovery.',
         'Review logs and recover the resource after the experiment completes.'
       ]
     },
     azureChaos: {
       title: 'Azure Chaos Studio Guidance',
       steps: [
-        'Choose the target virtual machine or service and define the failure scenario.',
+        `Select the target ${targetDescription} and define the failure scenario.`,
         'Create or update an Azure Chaos Studio experiment with the selected resource.',
         'Assign the required permissions and service principal access.',
-        'Run the experiment and monitor the application and service recovery.',
+        'Run the experiment and monitor application and service recovery.',
         'Stop the experiment and review the impact for remediation planning.'
       ]
     },
     gcpChaos: {
       title: 'GCP Resilience Testing Guidance',
       steps: [
-        'Select the target Compute Engine or Cloud SQL instance for the test.',
+        `Select the target ${targetDescription} for the test.`,
         'Use GCP stress, VM restart, or load balancer failover scenarios as applicable.',
         'Monitor application health, networking, and data consistency during the event.',
         'Recover the service by restoring the target or rerouting traffic.',
@@ -260,7 +283,7 @@ app.post('/api/chaos/guide', (req, res) => {
     gremlin: {
       title: 'Gremlin Chaos Test Guidance',
       steps: [
-        'Choose the target host or service and define the failure mode (CPU, network, shutdown).',
+        `Choose the target ${targetDescription} and define the failure mode (CPU, network, shutdown).`,
         'Create a Gremlin attack for the selected service provider environment.',
         'Run the attack in a controlled window and monitor service resilience.',
         'Stop the attack, verify recovery and identify any gaps.',
@@ -275,7 +298,7 @@ app.post('/api/chaos/guide', (req, res) => {
     return res.status(400).json({ error: `Unsupported chaos tool: ${tool}` });
   }
 
-  res.json({ ...selected, provider, service: Array.isArray(service) ? service.join(', ') : service });
+  res.json({ ...selected, provider, service: serviceLabel });
 });
 
 app.get('*', (req, res) => {
