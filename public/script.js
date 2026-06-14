@@ -14,6 +14,7 @@ const resultPane = document.getElementById('resultPane');
 const guidancePane = document.getElementById('guidancePane');
 const chaosGuideButton = document.getElementById('chaosGuideButton');
 const validateProfileButton = document.getElementById('validateProfileButton');
+const envHint = document.getElementById('envHint');
 const primaryRegionSelect = document.getElementById('primaryRegion');
 const secondaryRegionSelect = document.getElementById('secondaryRegion');
 const primaryAzSelect = document.getElementById('primaryAz');
@@ -151,6 +152,32 @@ function updateProviderProfileLabel() {
 
   providerProfileLabelText.textContent = labelText;
   providerProfileInput.placeholder = placeholder;
+  updateEnvHint(provider);
+}
+
+function updateEnvHint(provider) {
+  let message = 'Environment variable support is available for the selected provider.';
+
+  switch (provider) {
+    case 'aws':
+      message = 'AWS env vars: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, optional AWS_SESSION_TOKEN.';
+      break;
+    case 'azure':
+      message = 'Azure env vars: AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID, optional AZURE_SUBSCRIPTION_ID.';
+      break;
+    case 'gcp':
+      message = 'GCP env vars: GOOGLE_APPLICATION_CREDENTIALS (JSON key path) or GCP_SERVICE_ACCOUNT_KEY (JSON payload).';
+      break;
+    case 'oci':
+      message = 'OCI env vars: OCI_CLI_CONFIG_FILE + OCI_CLI_PROFILE, or OCI_CLI_TENANCY + OCI_CLI_USER + OCI_CLI_FINGERPRINT + OCI_CLI_KEY_FILE.';
+      break;
+    default:
+      break;
+  }
+
+  if (envHint) {
+    envHint.textContent = message;
+  }
 }
 
 function updateChaosToolOptions() {
