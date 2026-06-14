@@ -132,21 +132,21 @@ function updateRegionOptions() {
 
 function updateProviderProfileLabel() {
   const provider = providerSelect.value;
-  let labelText = 'Provider CLI Profile';
-  let placeholder = 'credentials or profile name';
+  let labelText = 'Provider credentials';
+  let placeholder = 'optional profile or env vars';
 
   if (provider === 'aws') {
-    labelText = 'AWS CLI Profile';
-    placeholder = 'dr-test';
+    labelText = 'AWS credentials or profile';
+    placeholder = 'optional profile name or env vars';
   } else if (provider === 'azure') {
-    labelText = 'Azure CLI Subscription / Profile';
-    placeholder = 'subscription-id-or-name';
+    labelText = 'Azure credentials or subscription/profile';
+    placeholder = 'subscription-id, profile, or env vars';
   } else if (provider === 'gcp') {
-    labelText = 'GCP Config / Profile';
-    placeholder = 'configuration-name';
+    labelText = 'GCP credentials or configuration';
+    placeholder = 'configuration name or env vars';
   } else if (provider === 'oci') {
-    labelText = 'OCI CLI Profile';
-    placeholder = 'DEFAULT';
+    labelText = 'OCI credentials or profile';
+    placeholder = 'profile name or env vars';
   }
 
   providerProfileLabelText.textContent = labelText;
@@ -296,10 +296,7 @@ validateProfileButton.addEventListener('click', async () => {
   const profile = providerProfileInput.value;
   const region = primaryRegionSelect.value;
 
-  if (!profile) {
-    resultPane.innerHTML = '<div class="error">Enter a provider profile or credential identifier to validate.</div>';
-    return;
-  }
+  resultPane.innerHTML = '<div class="info">Validating provider credentials using environment variables or optional profile...</div>';
 
   const response = await fetch('/api/provider/validate', {
     method: 'POST',
