@@ -32,13 +32,14 @@
             <select id="provider" required></select>
           </label>
           <label id="providerProfileLabel" class="hidden">
-            <span id="providerProfileLabelText">Provider CLI Profile</span>
-            <input type="text" id="providerProfile" placeholder="dr-test" />
+            <span id="providerProfileLabelText">Provider credentials</span>
+            <input type="text" id="providerProfile" placeholder="optional profile or env vars" />
           </label>
           <label>
             Account ID
             <input type="text" id="accountId" placeholder="639183867348" />
           </label>
+          <p class="hint">Use environment variables for provider credentials or an optional provider profile name.</p>
           <div class="actions auth-actions">
             <button type="button" id="validateProfileButton">Validate Credentials</button>
           </div>

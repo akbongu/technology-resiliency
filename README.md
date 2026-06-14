@@ -54,7 +54,7 @@ $env:OCI_CLI_PROFILE = 'DEFAULT'
 ## Features
 - Choose cloud providers: AWS, Azure, GCP, Oracle Cloud
 - Choose service types: EC2, RDS, S3, ELB, Virtual Machine, SQL Database, Cloud Storage, OCI DNS, etc.
-- Enter the account ID and optionally a provider CLI profile for validation
+- Enter the account ID and optionally provider credentials or environment-variable credentials for validation
 - Support AWS, Azure, GCP, and OCI provider validation flows
 - Select primary and secondary region/AZ failover targets for DR execution
 - Select within-region or cross-region DR testing
