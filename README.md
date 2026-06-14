@@ -29,6 +29,28 @@ npm start
 http://localhost:3000
 ```
 
+## Environment variables
+
+The app can validate cloud provider credentials from environment variables instead of CLI profiles.
+
+- AWS: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, optionally `AWS_SESSION_TOKEN`
+- Azure: `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`, optionally `AZURE_SUBSCRIPTION_ID`
+- GCP: `GOOGLE_APPLICATION_CREDENTIALS`
+- OCI: `OCI_CLI_CONFIG_FILE` and `OCI_CLI_PROFILE`, or `OCI_CLI_TENANCY`, `OCI_CLI_USER`, `OCI_CLI_FINGERPRINT`, `OCI_CLI_KEY_FILE`
+
+### PowerShell example
+
+```powershell
+$env:AWS_ACCESS_KEY_ID = 'AKIA...'
+$env:AWS_SECRET_ACCESS_KEY = '...' 
+$env:AZURE_CLIENT_ID = '...' 
+$env:AZURE_CLIENT_SECRET = '...' 
+$env:AZURE_TENANT_ID = '...' 
+$env:GOOGLE_APPLICATION_CREDENTIALS = 'C:\path\to\service-account.json'
+$env:OCI_CLI_CONFIG_FILE = 'C:\Users\me\.oci\config'
+$env:OCI_CLI_PROFILE = 'DEFAULT'
+```
+
 ## Features
 - Choose cloud providers: AWS, Azure, GCP, Oracle Cloud
 - Choose service types: EC2, RDS, S3, ELB, Virtual Machine, SQL Database, Cloud Storage, OCI DNS, etc.
