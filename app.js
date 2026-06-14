@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
+const { validateProviderProfile } = require('./providerAuth');
 const execFileAsync = promisify(execFile);
 const app = express();
 const port = process.env.PORT || 3000;
@@ -76,17 +77,8 @@ app.post('/api/test', async (req, res) => {
 
   if (provider === 'aws' && providerProfile && !effectiveAccountId) {
     try {
-      const { stdout } = await execFileAsync('aws', [
-        'sts',
-        'get-caller-identity',
-        '--profile',
-        providerProfile,
-        '--query',
-        'Account',
-        '--output',
-        'text'
-      ]);
-      effectiveAccountId = stdout.trim();
+      const validation = await validateProviderProfile(provider, providerProfile, primaryRegion);
+      effectiveAccountId = validation.accountId;
     } catch (error) {
       return res.status(400).json({ error: `AWS CLI profile validation failed: ${error.message}` });
     }
@@ -166,54 +158,8 @@ app.post('/api/provider/validate', async (req, res) => {
   }
 
   try {
-    if (provider === 'aws') {
-      const args = [
-        'sts',
-        'get-caller-identity',
-        '--profile',
-        profile,
-        '--query',
-        'Account',
-        '--output',
-        'text'
-      ];
-      if (region) {
-        args.splice(2, 0, '--region', region);
-      }
-      const { stdout } = await execFileAsync('aws', args);
-      return res.json({ provider, profile, accountId: stdout.trim() });
-    }
-
-    if (provider === 'azure') {
-      const args = ['account', 'show'];
-      if (profile) {
-        args.push('--subscription', profile);
-      }
-      args.push('--query', 'id', '-o', 'tsv');
-      const { stdout } = await execFileAsync('az', args);
-      return res.json({ provider, profile, accountId: stdout.trim() });
-    }
-
-    if (provider === 'gcp') {
-      const args = ['config', 'get-value', 'account'];
-      if (profile) {
-        args.push('--configuration', profile);
-      }
-      const { stdout } = await execFileAsync('gcloud', args);
-      return res.json({ provider, profile, accountId: stdout.trim() });
-    }
-
-    if (provider === 'oci') {
-      const args = ['os', 'ns', 'get', '--output', 'json'];
-      if (profile) {
-        args.push('--profile', profile);
-      }
-      const { stdout } = await execFileAsync('oci', args);
-      const namespace = JSON.parse(stdout.trim()).data || JSON.parse(stdout.trim()).value || null;
-      return res.json({ provider, profile, accountId: namespace || 'OCI namespace' });
-    }
-
-    res.status(400).json({ error: `Unsupported provider: ${provider}` });
+    const result = await validateProviderProfile(provider, profile, region);
+    return res.json(result);
   } catch (error) {
     res.status(400).json({ error: `${provider.toUpperCase()} validation failed: ${error.message}` });
   }

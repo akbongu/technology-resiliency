@@ -8,6 +8,7 @@ This skill defines a Technology Resiliency Agent for disaster recovery readiness
 - Design DR test plans for within-region and cross-region failover scenarios.
 - Recommend service-specific recovery approaches for AWS, Azure, GCP, and Oracle Cloud.
 - Support provider validation using cloud CLI profile, subscription, or tenancy checks.
+- Support provider authentication through a modular cloud-provider adapter for AWS, Azure, GCP, and OCI.
 - Provide selectable primary and secondary region/AZ failover options for supported cloud providers.
 - Support combined multi-service resiliency tests across compute, storage, database, networking, and DNS.
 - Deliver provider-specific chaos guidance for AWS FIS, Azure Chaos Studio, GCP resilience testing, Gremlin, and equivalent provider tools.
