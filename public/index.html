@@ -33,13 +33,14 @@
           </label>
           <label id="providerProfileLabel" class="hidden">
             <span id="providerProfileLabelText">Provider credentials</span>
-            <input type="text" id="providerProfile" placeholder="optional profile or env vars" />
+            <input type="text" id="providerProfile" placeholder="optional profile name, subscription ID, or env vars" />
           </label>
           <label>
             Account ID
             <input type="text" id="accountId" placeholder="639183867348" />
           </label>
-          <p class="hint">Use environment variables for provider credentials or an optional provider profile name.</p>
+          <p class="hint">Leave provider credentials blank to use environment variables, or enter an optional profile/subscription identifier.</p>
+          <p id="envHint" class="hint env-hint">Environment variable support is available for the selected provider.</p>
           <div class="actions auth-actions">
             <button type="button" id="validateProfileButton">Validate Credentials</button>
           </div>

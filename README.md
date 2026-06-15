@@ -31,24 +31,36 @@ http://localhost:3000
 
 ## Environment variables
 
-The app can validate cloud provider credentials from environment variables instead of CLI profiles.
+The app can validate cloud provider credentials from environment variables instead of CLI profiles. When environment credentials are set, you can leave the provider profile field blank and still validate access.
 
 - AWS: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, optionally `AWS_SESSION_TOKEN`
 - Azure: `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`, optionally `AZURE_SUBSCRIPTION_ID`
-- GCP: `GOOGLE_APPLICATION_CREDENTIALS`
+- GCP: `GOOGLE_APPLICATION_CREDENTIALS` (path to service account JSON) or `GCP_SERVICE_ACCOUNT_KEY` (JSON payload)
 - OCI: `OCI_CLI_CONFIG_FILE` and `OCI_CLI_PROFILE`, or `OCI_CLI_TENANCY`, `OCI_CLI_USER`, `OCI_CLI_FINGERPRINT`, `OCI_CLI_KEY_FILE`
 
 ### PowerShell example
 
 ```powershell
 $env:AWS_ACCESS_KEY_ID = 'AKIA...'
-$env:AWS_SECRET_ACCESS_KEY = '...' 
-$env:AZURE_CLIENT_ID = '...' 
-$env:AZURE_CLIENT_SECRET = '...' 
-$env:AZURE_TENANT_ID = '...' 
+$env:AWS_SECRET_ACCESS_KEY = '...'
+$env:AWS_SESSION_TOKEN = '...'
+
+$env:AZURE_CLIENT_ID = '...'
+$env:AZURE_CLIENT_SECRET = '...'
+$env:AZURE_TENANT_ID = '...'
+$env:AZURE_SUBSCRIPTION_ID = '...'
+
 $env:GOOGLE_APPLICATION_CREDENTIALS = 'C:\path\to\service-account.json'
+# Or provide JSON directly:
+$env:GCP_SERVICE_ACCOUNT_KEY = Get-Content 'C:\path\to\service-account.json' -Raw
+
 $env:OCI_CLI_CONFIG_FILE = 'C:\Users\me\.oci\config'
 $env:OCI_CLI_PROFILE = 'DEFAULT'
+# Or using key-based OCI variables:
+$env:OCI_CLI_TENANCY = 'ocid1.tenancy.oc1...'
+$env:OCI_CLI_USER = 'ocid1.user.oc1...'
+$env:OCI_CLI_FINGERPRINT = '20:3b:97:13:55:1c:...' 
+$env:OCI_CLI_KEY_FILE = 'C:\Users\me\.oci\oci_api_key.pem'
 ```
 
 ## Features

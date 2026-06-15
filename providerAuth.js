@@ -1,6 +1,10 @@
-const { execFile } = require('child_process');
-const { promisify } = require('util');
-const execFileAsync = promisify(execFile);
+const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
+const { fromIni } = require('@aws-sdk/credential-providers');
+const { DefaultAzureCredential } = require('@azure/identity');
+const { SubscriptionClient } = require('@azure/arm-subscriptions');
+const { GoogleAuth } = require('google-auth-library');
+const common = require('oci-common');
+const identity = require('oci-identity');
 
 function hasAwsEnvCredentials() {
   return Boolean(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
@@ -11,7 +15,7 @@ function hasAzureEnvCredentials() {
 }
 
 function hasGcpEnvCredentials() {
-  return Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  return Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GCP_SERVICE_ACCOUNT_KEY);
 }
 
 function hasOciEnvCredentials() {
@@ -65,7 +69,7 @@ async function validateProviderProfile(provider, profile, region) {
       case 'gcp':
         return validateGcpEnvCredentials();
       case 'oci':
-        return validateOciEnvCredentials();
+        return validateOciEnvCredentials(profile);
       default:
         throw new Error(`Unsupported provider: ${provider}`);
     }
@@ -75,111 +79,121 @@ async function validateProviderProfile(provider, profile, region) {
 }
 
 async function validateAwsProfile(profile, region) {
-  const args = [
-    'sts',
-    'get-caller-identity',
-    '--profile',
-    profile,
-    '--query',
-    'Account',
-    '--output',
-    'text'
-  ];
-  if (region) {
-    args.splice(2, 0, '--region', region);
-  }
-
-  const { stdout } = await execFileAsync('aws', args);
-  return { provider: 'aws', profile, accountId: stdout.trim() };
+  const client = new STSClient({
+    region,
+    credentials: fromIni({ profile })
+  });
+  const response = await client.send(new GetCallerIdentityCommand({}));
+  return { provider: 'aws', profile, accountId: response.Account };
 }
 
 async function validateAwsEnvCredentials(region) {
-  const args = ['sts', 'get-caller-identity'];
-  if (region) {
-    args.push('--region', region);
-  }
-  args.push('--query', 'Account', '--output', 'text');
-
-  const { stdout } = await execFileAsync('aws', args);
-  return { provider: 'aws', profile: null, accountId: stdout.trim() };
+  const client = new STSClient({
+    region,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      sessionToken: process.env.AWS_SESSION_TOKEN
+    }
+  });
+  const response = await client.send(new GetCallerIdentityCommand({}));
+  return { provider: 'aws', profile: null, accountId: response.Account };
 }
 
 async function validateAzureProfile(profile) {
-  const args = ['account', 'show'];
+  const credential = new DefaultAzureCredential();
+  const client = new SubscriptionClient(credential);
+
   if (profile) {
-    args.push('--subscription', profile);
+    try {
+      const subscription = await client.subscriptions.get(profile);
+      return { provider: 'azure', profile, accountId: subscription.subscriptionId };
+    } catch {
+      const subscriptions = [];
+      for await (const sub of client.subscriptions.list()) {
+        if (sub.subscriptionId === profile || sub.displayName === profile) {
+          return { provider: 'azure', profile, accountId: sub.subscriptionId };
+        }
+        subscriptions.push(sub);
+      }
+      if (subscriptions.length === 0) {
+        throw new Error('Unable to validate Azure subscription profile.');
+      }
+    }
   }
-  args.push('--query', 'id', '-o', 'tsv');
-  const { stdout } = await execFileAsync('az', args);
-  return { provider: 'azure', profile, accountId: stdout.trim() };
+
+  const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
+  if (subscriptionId) {
+    try {
+      const subscription = await client.subscriptions.get(subscriptionId);
+      return { provider: 'azure', profile: null, accountId: subscription.subscriptionId };
+    } catch {
+      // fallback to available subscriptions
+    }
+  }
+
+  for await (const sub of client.subscriptions.list()) {
+    return { provider: 'azure', profile: null, accountId: sub.subscriptionId };
+  }
+
+  throw new Error('No Azure subscriptions were found for the configured credentials.');
 }
 
 async function validateAzureEnvCredentials() {
-  const clientId = process.env.AZURE_CLIENT_ID;
-  const clientSecret = process.env.AZURE_CLIENT_SECRET;
-  const tenantId = process.env.AZURE_TENANT_ID;
-  const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
-
-  if (!clientId || !clientSecret || !tenantId) {
-    throw new Error('Azure environment credentials are incomplete.');
-  }
-
-  const loginArgs = ['login', '--service-principal', '--username', clientId, '--password', clientSecret, '--tenant', tenantId];
-  if (subscriptionId) {
-    loginArgs.push('--subscription', subscriptionId);
-  }
-
-  await execFileAsync('az', loginArgs);
-  const args = ['account', 'show', '--query', 'id', '-o', 'tsv'];
-  const { stdout } = await execFileAsync('az', args);
-  return { provider: 'azure', profile: null, accountId: stdout.trim() };
+  return validateAzureProfile(null);
 }
 
 async function validateGcpProfile(profile) {
-  const args = ['config', 'get-value', 'account'];
-  if (profile) {
-    args.push('--configuration', profile);
-  }
-  const { stdout } = await execFileAsync('gcloud', args);
-  return { provider: 'gcp', profile, accountId: stdout.trim() };
+  return validateGcpEnvCredentials();
 }
 
 async function validateGcpEnvCredentials() {
   const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (!keyFile) {
-    throw new Error('GCP environment credential file path is not set.');
+  const keyJson = process.env.GCP_SERVICE_ACCOUNT_KEY;
+
+  if (!keyFile && !keyJson) {
+    throw new Error('GCP environment credential file path or service account JSON is required.');
   }
 
-  await execFileAsync('gcloud', ['auth', 'activate-service-account', '--key-file', keyFile]);
-  const { stdout } = await execFileAsync('gcloud', ['config', 'get-value', 'account']);
-  return { provider: 'gcp', profile: null, accountId: stdout.trim() };
+  const options = {
+    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+  };
+
+  if (keyFile) {
+    options.keyFile = keyFile;
+  } else {
+    options.credentials = typeof keyJson === 'string' ? JSON.parse(keyJson) : keyJson;
+  }
+
+  const auth = new GoogleAuth(options);
+  await auth.getClient();
+  const projectId = await auth.getProjectId();
+
+  return { provider: 'gcp', profile: null, accountId: projectId };
 }
 
 async function validateOciProfile(profile) {
-  const args = ['os', 'ns', 'get', '--output', 'json'];
-  if (profile) {
-    args.push('--profile', profile);
-  }
-  const { stdout } = await execFileAsync('oci', args);
-  const json = JSON.parse(stdout.trim());
-  const namespace = json.data || json.value || null;
-  return { provider: 'oci', profile, accountId: namespace || 'OCI namespace' };
+  return validateOciEnvCredentials(profile);
 }
 
-async function validateOciEnvCredentials() {
-  const args = ['os', 'ns', 'get', '--output', 'json'];
+async function validateOciEnvCredentials(profile) {
+  const configFile = process.env.OCI_CLI_CONFIG_FILE;
+  const cliProfile = profile || process.env.OCI_CLI_PROFILE || 'DEFAULT';
+  const tenancyId = process.env.OCI_CLI_TENANCY;
 
-  if (process.env.OCI_CLI_CONFIG_FILE) {
-    args.push('--config-file', process.env.OCI_CLI_CONFIG_FILE);
-  }
-  if (process.env.OCI_CLI_PROFILE) {
-    args.push('--profile', process.env.OCI_CLI_PROFILE);
+  if (!configFile) {
+    throw new Error('OCI config file path is required for SDK credential validation.');
   }
 
-  const { stdout } = await execFileAsync('oci', args);
-  const json = JSON.parse(stdout.trim());
-  const namespace = json.data || json.value || null;
-  return { provider: 'oci', profile: null, accountId: namespace || 'OCI namespace' };
+  const provider = new common.ConfigFileAuthenticationDetailsProvider(configFile, cliProfile);
+  const client = new identity.IdentityClient({ authenticationDetailsProvider: provider });
+
+  if (!tenancyId) {
+    throw new Error('OCI tenancy ID is required via OCI_CLI_TENANCY.');
+  }
+
+  const response = await client.getTenancy({ tenancyId });
+  return { provider: 'oci', profile: null, accountId: response.tenancy?.id || tenancyId };
 }
 
 module.exports = {
