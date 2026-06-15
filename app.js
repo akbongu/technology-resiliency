@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const pkg = require('./package.json');
 const { validateProviderProfile, hasEnvCredentials } = require('./providerAuth');
 const app = express();
 const port = process.env.PORT || 3000;
@@ -242,6 +243,16 @@ app.post('/api/chaos/guide', (req, res) => {
   }
 
   res.json({ ...selected, provider, service: serviceLabel });
+});
+
+app.get('/version', (req, res) => {
+  res.json({
+    app: pkg.name,
+    version: pkg.version,
+    branch: process.env.VERCEL_GIT_COMMIT_REF || process.env.GIT_BRANCH || null,
+    commit: process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_COMMIT || null,
+    node: process.version
+  });
 });
 
 app.get('*', (req, res) => {
